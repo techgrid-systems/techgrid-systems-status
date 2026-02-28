@@ -21,13 +21,13 @@
     <header class="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
         <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-2 cursor-pointer" onclick="location.href=''">
+                <div class="flex items-center gap-2 cursor-pointer" onclick="location.reload()">
                     <div class="bg-blue-600 p-2 rounded-lg">
                         <i class="fas fa-bolt text-white text-xl"></i>
                     </div>
                     <span class="text-xl font-bold tracking-tight text-slate-800">TechGrid Systems Status</span>
                 </div>
-                <a href="" class="text-sm font-medium text-blue-600 hover:text-blue-800">
+                <a href="#" class="text-sm font-medium text-blue-600 hover:text-blue-800">
                     <i class="fas fa-arrow-left mr-1"></i> Back to Portal
                 </a>
             </div>
@@ -70,7 +70,7 @@
                 </div>
                 <div>
                     <h2 id="overall-status-title" class="text-2xl font-bold text-white">Initializing Monitor...</h2>
-                    <p class="opacity-90 text-sm text-slate-50 font-medium">Checking external IP connectivity. Last sync: <span id="last-update-time">--:--:--</span></p>
+                    <p class="opacity-90 text-sm text-slate-50 font-medium">Checking system health. Last sync: <span id="last-update-time">--:--:--</span></p>
                 </div>
             </div>
             <div class="flex gap-3">
@@ -78,10 +78,18 @@
             </div>
         </div>
 
-        <!-- Website URLs Section -->
+        <!-- NEW Section: Global Domains -->
         <div class="space-y-6 mb-16">
             <h3 class="text-xl font-bold text-slate-800 px-2 flex items-center gap-2">
-                <i class="fas fa-globe text-slate-400"></i> Website URLs
+                <i class="fas fa-link text-slate-400"></i> Global Domains
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="domain-grid"></div>
+        </div>
+
+        <!-- Website Portals Section -->
+        <div class="space-y-6 mb-16">
+            <h3 class="text-xl font-bold text-slate-800 px-2 flex items-center gap-2">
+                <i class="fas fa-globe text-slate-400"></i> Website Portals
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="service-grid"></div>
         </div>
@@ -89,7 +97,7 @@
         <!-- Infrastructure Section -->
         <div class="space-y-6">
             <h3 class="text-xl font-bold text-slate-800 px-2 flex items-center gap-2">
-                <i class="fas fa-network-wired text-slate-400"></i> Infrastructure Endpoints (IP Connectivity)
+                <i class="fas fa-network-wired text-slate-400"></i> Infrastructure Endpoints
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="infrastructure-grid"></div>
         </div>
@@ -100,7 +108,7 @@
         <div class="absolute inset-0 modal-backdrop" onclick="toggleModal(false)"></div>
         <div class="glass-card bg-white w-full max-w-md rounded-3xl p-8 relative shadow-2xl">
             <h3 class="text-2xl font-bold mb-4">Uptime Notifications</h3>
-            <p class="text-slate-500 text-sm mb-6">Get notified instantly if any IP endpoint stops responding.</p>
+            <p class="text-slate-500 text-sm mb-6">Get notified instantly if any endpoint stops responding.</p>
             <input type="email" placeholder="email@company.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 outline-none focus:ring-2 focus:ring-blue-500">
             <button class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition">Enable Alerts</button>
         </div>
@@ -112,11 +120,11 @@
             { id: 'portal', name: 'Support Portal', url: 'https://support.techgrid-systems.org.uk', status: 'pending' },
             { id: 'domain-org.uk', name: 'Global domain (.org.uk)', url: 'https://techgrid-systems.org.uk', status: 'pending' },
             { id: 'domain-co.uk', name: 'Global domain (.co.uk)', url: 'https://techgrid-systems.co.uk', status: 'pending' },
-            { id: 'portal', name: 'Status Portal', url: 'https://status.techgrid-systems.org.uk', status: 'pending' },
-            { id: 'portal', name: 'AI Portal', url: 'https://ai.techgrid-systems.org.uk', status: 'pending' },
-            { id: 'portal', name: 'VoIP Portal', url: 'https://voip.techgrid-systems.org.uk', status: 'pending' },
-            { id: 'portal', name: 'Applications Portal', url: 'https://applications.techgrid-systems.org.uk', status: 'pending' },
-            { id: 'portal', name: 'News Portal', url: 'https://news.techgrid-systems.org.uk', status: 'pending' },
+            { id: 'status-portal', name: 'Status Portal', url: 'https://status.techgrid-systems.org.uk', status: 'pending' },
+            { id: 'ai-portal', name: 'AI Portal', url: 'https://ai.techgrid-systems.org.uk', status: 'pending' },
+            { id: 'voip-portal', name: 'VoIP Portal', url: 'https://voip.techgrid-systems.org.uk', status: 'pending' },
+            { id: 'apps-portal', name: 'Applications Portal', url: 'https://applications.techgrid-systems.org.uk', status: 'pending' },
+            { id: 'news-portal', name: 'News Portal', url: 'https://news.techgrid-systems.org.uk', status: 'pending' },
         ];
 
         const infraNodes = [
@@ -130,9 +138,11 @@
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
             const url = host.startsWith('http') ? host : `https://${host}`;
-            const pingUrl = `${url}${url.includes('?') ? '&' : '?'}cache_bust=${Date.now()}`;
+            // Added cache busting to prevent 304 responses
+            const pingUrl = `${url}${url.includes('?') ? '&' : '?'}cb=${Date.now()}`;
 
             try {
+                // Using 'no-cors' to allow checking reachability across domains
                 await fetch(pingUrl, { 
                     mode: 'no-cors', 
                     method: 'GET', 
@@ -162,8 +172,30 @@
             updateUI();
         }
 
+        function createServiceCard(item) {
+            return `
+                <div class="glass-card p-6 rounded-2xl border-2 status-card-transition ${item.status === 'offline' ? 'border-red-200 bg-red-50/40' : 'border-transparent'}">
+                    <div class="flex justify-between items-start mb-4">
+                        <h4 class="font-bold text-slate-800">${item.name}</h4>
+                        <i class="fas ${item.status === 'offline' ? 'fa-times-circle text-red-500' : 'fa-check-circle text-emerald-500'}"></i>
+                    </div>
+                    <p class="text-[10px] text-slate-400 font-mono mb-4 truncate">${item.url}</p>
+                    <div class="flex items-center gap-2">
+                        <span class="flex h-2 w-2 relative">
+                            ${item.status === 'online' ? '<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>' : ''}
+                            <span class="relative inline-flex rounded-full h-2 w-2 ${item.status === 'offline' ? 'bg-red-500' : 'bg-emerald-500'}"></span>
+                        </span>
+                        <span class="text-xs font-bold uppercase tracking-wider ${item.status === 'offline' ? 'text-red-600' : 'text-emerald-600'}">
+                            ${item.status}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
         function updateUI() {
-            const grid = document.getElementById('service-grid');
+            const serviceGrid = document.getElementById('service-grid');
+            const domainGrid = document.getElementById('domain-grid');
             const infraGrid = document.getElementById('infrastructure-grid');
             const alertBanner = document.getElementById('incident-alert');
             const incidentTitle = document.getElementById('incident-title');
@@ -173,27 +205,15 @@
             const headerTitle = document.getElementById('overall-status-title');
             const headerIcon = document.getElementById('overall-status-icon');
             
-            if (!grid || !infraGrid) return;
+            if (!serviceGrid || !domainGrid || !infraGrid) return;
+
+            // Separate Global Domains from Portals
+            const domains = services.filter(s => s.name.toLowerCase().includes('domain'));
+            const portals = services.filter(s => !s.name.toLowerCase().includes('domain'));
 
             // Render Grids
-            grid.innerHTML = services.map(s => `
-                <div class="glass-card p-6 rounded-2xl border-2 status-card-transition ${s.status === 'offline' ? 'border-red-200 bg-red-50/40' : 'border-transparent'}">
-                    <div class="flex justify-between items-start mb-4">
-                        <h4 class="font-bold text-slate-800">${s.name}</h4>
-                        <i class="fas ${s.status === 'offline' ? 'fa-times-circle text-red-500' : 'fa-check-circle text-emerald-500'}"></i>
-                    </div>
-                    <p class="text-[10px] text-slate-400 font-mono mb-4 truncate">${s.url}</p>
-                    <div class="flex items-center gap-2">
-                        <span class="flex h-2 w-2 relative">
-                            ${s.status === 'online' ? '<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>' : ''}
-                            <span class="relative inline-flex rounded-full h-2 w-2 ${s.status === 'offline' ? 'bg-red-500' : 'bg-emerald-500'}"></span>
-                        </span>
-                        <span class="text-xs font-bold uppercase tracking-wider ${s.status === 'offline' ? 'text-red-600' : 'text-emerald-600'}">
-                            ${s.status}
-                        </span>
-                    </div>
-                </div>
-            `).join('');
+            domainGrid.innerHTML = domains.map(d => createServiceCard(d)).join('');
+            serviceGrid.innerHTML = portals.map(p => createServiceCard(p)).join('');
 
             infraGrid.innerHTML = infraNodes.map(n => `
                 <div class="flex items-center justify-between p-4 glass-card rounded-xl border-l-4 ${n.status === 'offline' ? 'border-red-500 bg-red-50/20' : 'border-emerald-500'}">
@@ -218,14 +238,14 @@
                 alertBanner.classList.remove('hidden');
                 
                 if (totalOffline.length === totalNodesCount) {
-                    incidentTitle.innerText = "All nodes are being reported as down";
-                    incidentDesc.innerText = "TechGrid Systems is monitoring a major disruption affecting the following nodes:";
+                    incidentTitle.innerText = "Major System Outage Detected";
+                    incidentDesc.innerText = "TechGrid Systems is monitoring a major disruption affecting all monitored nodes:";
                 } else if (offlineInfra.length > 1) {
-                    incidentTitle.innerText = "We are aware of multiple infrastructure nodes showing as down";
+                    incidentTitle.innerText = "Infrastructure Instability";
                     incidentDesc.innerText = "TechGrid Systems is monitoring a disruption with the infrastructure endpoints affecting the following nodes:";
                 } else {
-                    incidentTitle.innerText = "Certain nodes are being reported as down";
-                    incidentDesc.innerText = "TechGrid Systems is monitoring a disruption affecting the following nodes:";
+                    incidentTitle.innerText = "Partial Service Disruption";
+                    incidentDesc.innerText = "TechGrid Systems is monitoring a disruption affecting the following specific nodes:";
                 }
 
                 affectedList.innerHTML = totalOffline.map(node => `
@@ -254,9 +274,8 @@
 
         window.onload = () => {
             runHealthCheck();
-            setInterval(runHealthCheck, 30000);
+            setInterval(runHealthCheck, 30000); // Refresh every 30 seconds
         };
     </script>
 </body>
-
 </html>

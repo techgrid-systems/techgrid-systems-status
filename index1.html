@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status | TechGrid Systems</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: #ffffff; border: 1px solid #e2e8f0; }
+        .status-pill { padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .status-online { background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .status-offline { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .gradient-header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <header class="gradient-header py-10 shadow-sm">
+        <div class="max-w-5xl mx-auto px-6">
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">TechGrid Systems</h1>
+            <p class="text-slate-400 mt-2">Operational Status Center</p>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-10">
+        <!-- Status Banner -->
+        <div id="overall-status-card" class="glass-card p-6 rounded-xl flex items-center justify-between mb-10 shadow-sm">
+            <div class="flex items-center gap-4">
+                <div id="status-icon-container" class="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center">
+                    <i id="overall-status-icon" class="fas fa-check-circle text-emerald-600 text-2xl"></i>
+                </div>
+                <div>
+                    <h2 id="overall-status-title" class="text-lg font-bold">All Systems Operational</h2>
+                    <p class="text-sm text-slate-500" id="status-msg">No outages reported across our infrastructure.</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] uppercase font-bold text-slate-400">Last Update</p>
+                <p class="text-sm font-mono text-slate-600" id="last-update-time">--:--:--</p>
+            </div>
+        </div>
+
+        <!-- Service Portals -->
+        <section class="mb-12">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 px-1">Service Portals</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="service-grid"></div>
+        </section>
+
+        <!-- Infrastructure -->
+        <section>
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 px-1">Infrastructure Endpoints</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="infrastructure-grid"></div>
+        </section>
+    </main>
+
+    <script>
+        const services = [
+            { name: 'Main Website', url: 'techgrid-systems.org.uk' },
+            { name: 'Support Portal', url: 'support.techgrid-systems.org.uk' },
+            { name: 'Status Portal', url: 'status.techgrid-systems.org.uk' },
+            { name: 'SharePoint Portal', url: 'sharepoint.techgrid-systems.org.uk' },
+            { name: 'AI Portal', url: 'ai.techgrid-systems.org.uk' },
+            { name: 'Training Portal', url: 'power-automate-training.techgrid-systems.org.uk' }
+        ];
+
+        const infraNodes = [
+            { name: 'Core Node (London)', host: 'techgrid-systems.org.uk' },
+            { name: 'Domain Controller', host: 'TGS-DC-01.techgrid-systems.org.uk' },
+            { name: 'FTP Node', host: 'ftp.techgrid-systems.org.uk' },
+            { name: 'DNS Resolver', host: '8.8.8.8' }
+        ];
+
+        async function checkStatus(url) {
+            try {
+                const response = await fetch(`https://${url}`, { mode: 'no-cors', cache: 'no-cache' });
+                return 'online';
+            } catch { return 'offline'; }
+        }
+
+        async function updateDashboard() {
+            for (let s of services) s.status = await checkStatus(s.url);
+            for (let n of infraNodes) n.status = await checkStatus(n.host);
+
+            const serviceGrid = document.getElementById('service-grid');
+            serviceGrid.innerHTML = services.map(s => `
+                <a href="https://${s.url}" target="_blank" class="glass-card p-5 rounded-xl hover:border-blue-400 transition-all flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-semibold">${s.name}</span>
+                        <span class="status-pill ${s.status === 'online' ? 'status-online' : 'status-offline'}">${s.status}</span>
+                    </div>
+                    <span class="text-[11px] font-mono text-blue-600 underline underline-offset-2">${s.url}</span>
+                </a>
+            `).join('');
+
+            const infraGrid = document.getElementById('infrastructure-grid');
+            infraGrid.innerHTML = infraNodes.map(n => `
+                <div class="glass-card p-4 rounded-xl flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium">${n.name}</p>
+                        <p class="text-[10px] text-slate-400 font-mono">${n.host}</p>
+                    </div>
+                    <span class="status-pill ${n.status === 'online' ? 'status-online' : 'status-offline'}">${n.status}</span>
+                </div>
+            `).join('');
+
+            const anyOffline = [...services, ...infraNodes].some(x => x.status === 'offline');
+            const card = document.getElementById('overall-status-card');
+            const title = document.getElementById('overall-status-title');
+            const msg = document.getElementById('status-msg');
+            const icon = document.getElementById('overall-status-icon');
+
+            if (anyOffline) {
+                card.classList.add('border-red-300', 'bg-red-50/50');
+                title.innerText = "System Degradation Detected";
+                msg.innerText = "One or more services are currently unreachable.";
+                icon.className = "fas fa-exclamation-triangle text-red-600 text-2xl";
+            } else {
+                card.classList.remove('border-red-300', 'bg-red-50/50');
+                title.innerText = "All Systems Operational";
+                msg.innerText = "All monitored services are fully functional.";
+                icon.className = "fas fa-check-circle text-emerald-600 text-2xl";
+            }
+            document.getElementById('last-update-time').innerText = new Date().toLocaleTimeString();
+        }
+
+        window.onload = () => { updateDashboard(); setInterval(updateDashboard, 30000); };
+    </script>
+</body>
+</html>

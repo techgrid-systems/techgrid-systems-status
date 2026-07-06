@@ -21,11 +21,6 @@
             <div class="flex items-center gap-2 font-bold text-2xl tracking-tight">
                 <span class="text-slate-900">techgrid</span><span class="text-blue-600">status</span>
             </div>
-            <div class="hidden md:flex gap-8 text-[13px] text-slate-500 font-semibold uppercase tracking-wider">
-                <a href="#" class="hover:text-blue-600">Report Issues</a>
-                <a href="#" class="hover:text-blue-600">Subscribe</a>
-                <a href="#" class="text-blue-600 border-b-2 border-blue-600 pb-1">Login</a>
-            </div>
         </nav>
     </header>
 
@@ -37,23 +32,22 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
             <div class="bg-white rounded shadow-md border border-slate-200 overflow-hidden">
-                <div class="panel-header px-5 py-3 font-bold text-sm">Recent Uptime</div>
-                <table class="w-full text-left text-[13px]">
-                    <thead class="text-slate-400 border-b border-slate-100">
-                        <tr><th class="p-4 font-semibold">Day</th><th class="p-4 font-semibold">Date</th><th class="p-4 font-semibold">Uptime</th></tr>
-                    </thead>
-                    <tbody id="uptime-body" class="divide-y divide-slate-50"></tbody>
-                </table>
-            </div>
-
-            <div class="bg-white rounded shadow-md border border-slate-200 overflow-hidden">
                 <div class="panel-header px-5 py-3 font-bold text-sm">Service Status</div>
                 <div id="service-status-list" class="divide-y divide-slate-100 p-2"></div>
+            </div>
+            
+            <div class="bg-white rounded shadow-md border border-slate-200 overflow-hidden">
+                <div class="panel-header px-5 py-3 font-bold text-sm">Status Legend</div>
+                <div class="p-6 text-sm text-slate-600 space-y-3">
+                    <p><span class="inline-block w-4 h-4 bg-emerald-500 rounded mr-2"></span> <b>UP</b>: Service is operational.</p>
+                    <p><span class="inline-block w-4 h-4 bg-red-500 rounded mr-2"></span> <b>DOWN</b>: Service is unreachable.</p>
+                    <p><span class="inline-block w-4 h-4 bg-amber-500 rounded mr-2"></span> <b>WARN</b>: Planned maintenance.</p>
+                </div>
             </div>
         </div>
 
         <div class="bg-white rounded shadow-md border border-slate-200 overflow-hidden mb-20">
-            <div class="panel-header px-5 py-3 font-bold text-sm">History Grid</div>
+            <div class="panel-header px-5 py-3 font-bold text-sm">7-Day History</div>
             <div class="overflow-x-auto">
                 <table class="w-full text-[13px]">
                     <thead class="bg-slate-50 text-slate-400 border-b border-slate-100" id="history-header"></thead>
@@ -80,77 +74,56 @@
             { id: 12, name: 'Primary FTP Server', url: 'https://ftp.techgrid-systems.org.uk', icon: 'file-import' }
         ];
 
-        function toggleDetails(id) {
-            const el = document.getElementById(`details-${id}`);
-            el.style.maxHeight = el.style.maxHeight ? null : el.scrollHeight + "px";
-        }
-
-        function getStatusBadge(status) {
-            switch(status) {
-                case 'normal': return '<div class="flex items-center gap-2 text-emerald-500 font-bold text-[11px]"><span class="status-box bg-emerald-500 text-white px-2 py-0.5 rounded shadow-sm">UP</span></div>';
-                case 'maintenance': return '<div class="flex items-center gap-2 text-amber-500 font-bold text-[11px]"><span class="status-box bg-amber-500 text-white px-2 py-0.5 rounded shadow-sm">WARN</span></div>';
-                case 'unavailable': return '<div class="flex items-center gap-2 text-red-500 font-bold text-[11px]"><span class="status-box bg-red-500 text-white px-2 py-0.5 rounded shadow-sm">RED</span></div>';
-                default: return '<span class="text-slate-300">...</span>';
-            }
-        }
+        const historyData = {
+            "2026-07-06": { 4: 'warn', 11: 'down' },
+            "2026-07-05": { 0: 'down' },
+        };
 
         async function updateDashboard() {
             let maintenanceList = [];
             try {
                 const res = await fetch(`./maintenance.json?t=${new Date().getTime()}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    maintenanceList = data.nodes || [];
-                }
-            } catch (e) { console.warn("maintenance.json not reachable or invalid, skipping maintenance mode."); }
+                if (res.ok) { const data = await res.json(); maintenanceList = data.nodes || []; }
+            } catch (e) { console.warn("Maint mode off."); }
 
             for(let n of allNodes) {
                 const isMaint = maintenanceList.find(m => m.id === n.id);
-                if (isMaint) {
-                    n.status = 'maintenance';
-                } else {
-                    try {
-                        await fetch(n.url, { mode: 'no-cors' });
-                        n.status = 'normal';
-                    } catch { n.status = 'unavailable'; }
+                n.status = isMaint ? 'maintenance' : 'normal';
+                if (!isMaint) {
+                    try { await fetch(n.url, { mode: 'no-cors' }); } 
+                    catch { n.status = 'unavailable'; }
                 }
             }
 
             document.getElementById('service-status-list').innerHTML = allNodes.map(n => `
-                <div class="hover:bg-slate-50 transition-colors">
-                    <div class="p-4 flex justify-between items-center cursor-pointer" onclick="toggleDetails(${n.id})">
-                        <div class="flex items-center gap-3">
-                            <i class="fas fa-${n.icon} text-slate-400 w-5"></i>
-                            <span class="font-medium text-slate-700">${n.name}</span>
-                        </div>
-                        ${getStatusBadge(n.status)}
-                    </div>
-                    <div id="details-${n.id}" class="details-panel max-h-0 bg-white border-l-4 border-blue-500 ml-10">
-                        <div class="px-4 py-2 text-[12px] text-slate-500 font-mono">${n.url}</div>
-                    </div>
+                <div class="p-4 flex justify-between items-center">
+                    <span class="font-medium text-slate-700 truncate mr-4"><i class="fas fa-${n.icon} mr-2"></i> ${n.name}</span>
+                    ${n.status === 'normal' ? '<span class="text-emerald-500 font-bold text-[11px] bg-emerald-100 px-2 py-1 rounded">UP</span>' : 
+                      (n.status === 'maintenance' ? '<span class="text-amber-500 font-bold text-[11px] bg-amber-100 px-2 py-1 rounded">WARN</span>' : 
+                      '<span class="text-red-500 font-bold text-[11px] bg-red-100 px-2 py-1 rounded">DOWN</span>')}
                 </div>
             `).join('');
 
-            const today = new Date();
-            document.getElementById('uptime-body').innerHTML = [0,1,2,3,4,5,6].map(i => {
-                const d = new Date(); d.setDate(today.getDate() - i);
-                return `<tr><td class="p-4">${d.toLocaleDateString('en-US', {weekday: 'long'})}</td><td class="p-4">${d.toLocaleDateString()}</td><td class="p-4 font-bold">100.00%</td></tr>`;
-            }).join('');
-
-            const dates = [0,1,2,3,4,5,6].map(i => {
-                const d = new Date(); d.setDate(today.getDate() - i);
-                return d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+            const last7Days = [0,1,2,3,4,5,6].map(i => {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                return d.toISOString().split('T')[0];
             });
-            document.getElementById('history-header').innerHTML = `<tr class="text-left text-[11px] uppercase tracking-wider"><th class="p-5 font-semibold text-slate-500">Service Group</th>` + dates.map(d => `<th class="p-5 text-center font-semibold">${d}</th>`).join('') + `</tr>`;
+
+            document.getElementById('history-header').innerHTML = `<tr class="text-left text-[11px] uppercase tracking-wider"><th class="p-5 font-semibold text-slate-500">Service</th>` + 
+                last7Days.map(d => `<th class="p-5 text-center">${d.split('-')[2]}</th>`).join('') + `</tr>`;
+
             document.getElementById('history-body').innerHTML = allNodes.map(n => `
-                <tr><td class="p-5 font-semibold">${n.name}</td>${dates.map(() => `<td class="p-5 text-center text-xl">${n.status === 'normal' ? '✅' : (n.status === 'maintenance' ? '⚠️' : '❌')}</td>`).join('')}</tr>
+                <tr><td class="p-5 font-semibold text-[13px] truncate">${n.name}</td>${last7Days.map(date => {
+                    const status = historyData[date] ? historyData[date][n.id] : null;
+                    return `<td class="p-5 text-center">${status ? (status === 'down' ? '❌' : '⚠️') : '✅'}</td>`;
+                }).join('')}</tr>
             `).join('');
 
-            document.getElementById('last-updated').innerText = `Last System Ping: ${new Date().toLocaleTimeString()}`;
+            document.getElementById('last-updated').innerText = `Updated: ${new Date().toLocaleTimeString()}`;
         }
 
         updateDashboard();
-        setInterval(updateDashboard, 30000); 
+        setInterval(updateDashboard, 30000);
     </script>
 </body>
 </html>

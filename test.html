@@ -81,7 +81,7 @@
         async function updateDashboard() {
             let maintenanceList = [];
             try {
-                const res = await fetch('/maintenance.json', { cache: 'no-cache' });
+                const res = await fetch('maintenance.json', { cache: 'no-cache' });
                 const data = await res.json();
                 maintenanceList = data.nodes;
             } catch (e) { console.log("No maintenance schedule found."); }

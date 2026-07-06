@@ -41,7 +41,7 @@
                 <div class="p-6 text-sm text-slate-600 space-y-3">
                     <p><span class="inline-block w-4 h-4 bg-emerald-500 rounded mr-2"></span> <b>UP</b>: Service is operational.</p>
                     <p><span class="inline-block w-4 h-4 bg-red-500 rounded mr-2"></span> <b>DOWN</b>: Service is unreachable.</p>
-                    <p><span class="inline-block w-4 h-4 bg-amber-500 rounded mr-2"></span> <b>WARNING</b>: Planned maintenance.</p>
+                    <p><span class="inline-block w-4 h-4 bg-amber-500 rounded mr-2"></span> <b>WARN</b>: Planned maintenance.</p>
                 </div>
             </div>
         </div>
@@ -74,6 +74,10 @@
             { id: 12, name: 'Primary FTP Server', url: 'https://ftp.techgrid-systems.org.uk', icon: 'file-import' }
         ];
 
+        const historyData = {
+            "2026-07-06": { 4: 'warn', 11: 'down' },
+            "2026-07-05": { 0: 'down' },
+        };
 
         async function updateDashboard() {
             let maintenanceList = [];
@@ -95,7 +99,7 @@
                 <div class="p-4 flex justify-between items-center">
                     <span class="font-medium text-slate-700 truncate mr-4"><i class="fas fa-${n.icon} mr-2"></i> ${n.name}</span>
                     ${n.status === 'normal' ? '<span class="text-emerald-500 font-bold text-[11px] bg-emerald-100 px-2 py-1 rounded">UP</span>' : 
-                      (n.status === 'maintenance' ? '<span class="text-amber-500 font-bold text-[11px] bg-amber-100 px-2 py-1 rounded">WARNING</span>' : 
+                      (n.status === 'maintenance' ? '<span class="text-amber-500 font-bold text-[11px] bg-amber-100 px-2 py-1 rounded">WARN</span>' : 
                       '<span class="text-red-500 font-bold text-[11px] bg-red-100 px-2 py-1 rounded">DOWN</span>')}
                 </div>
             `).join('');

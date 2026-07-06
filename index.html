@@ -98,9 +98,11 @@
             let maintenanceList = [];
             try {
                 const res = await fetch(`./maintenance.json?t=${new Date().getTime()}`);
-                const data = await res.json();
-                maintenanceList = data.nodes || [];
-            } catch (e) { console.error("Error loading maintenance.json:", e); }
+                if (res.ok) {
+                    const data = await res.json();
+                    maintenanceList = data.nodes || [];
+                }
+            } catch (e) { console.warn("maintenance.json not reachable or invalid, skipping maintenance mode."); }
 
             for(let n of allNodes) {
                 const isMaint = maintenanceList.find(m => m.id === n.id);
@@ -114,7 +116,6 @@
                 }
             }
 
-            // Render Service List
             document.getElementById('service-status-list').innerHTML = allNodes.map(n => `
                 <div class="hover:bg-slate-50 transition-colors">
                     <div class="p-4 flex justify-between items-center cursor-pointer" onclick="toggleDetails(${n.id})">
@@ -130,14 +131,12 @@
                 </div>
             `).join('');
 
-            // Render Uptime
             const today = new Date();
             document.getElementById('uptime-body').innerHTML = [0,1,2,3,4,5,6].map(i => {
                 const d = new Date(); d.setDate(today.getDate() - i);
                 return `<tr><td class="p-4">${d.toLocaleDateString('en-US', {weekday: 'long'})}</td><td class="p-4">${d.toLocaleDateString()}</td><td class="p-4 font-bold">100.00%</td></tr>`;
             }).join('');
 
-            // Render History
             const dates = [0,1,2,3,4,5,6].map(i => {
                 const d = new Date(); d.setDate(today.getDate() - i);
                 return d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});

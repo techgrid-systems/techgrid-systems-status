@@ -10,8 +10,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f9fafb; color: #1e293b; }
         .panel-header { background-color: #0f172a; color: white; border-bottom: 2px solid #2563eb; }
-        .details-panel { transition: max-height 0.3s ease-out; overflow: hidden; }
-        .status-box { min-width: 50px; text-align: center; }
     </style>
 </head>
 <body class="antialiased">
@@ -41,7 +39,6 @@
                 <div class="p-6 text-sm text-slate-600 space-y-3">
                     <p><span class="inline-block w-4 h-4 bg-emerald-500 rounded mr-2"></span> <b>UP</b>: Service is operational.</p>
                     <p><span class="inline-block w-4 h-4 bg-red-500 rounded mr-2"></span> <b>DOWN</b>: Service is unreachable.</p>
-                    <p><span class="inline-block w-4 h-4 bg-amber-500 rounded mr-2"></span> <b>WARN</b>: Planned maintenance.</p>
                 </div>
             </div>
         </div>
@@ -74,33 +71,27 @@
             { id: 12, name: 'Primary FTP Server', url: 'https://ftp.techgrid-systems.org.uk', icon: 'file-import' }
         ];
 
+        // Manually update this for history logs
         const historyData = {
-            "2026-07-06": { 4: 'warn', 11: 'down' },
+            "2026-07-06": { 4: 'down', 11: 'down' },
             "2026-07-05": { 0: 'down' },
         };
 
         async function updateDashboard() {
-            let maintenanceList = [];
-            try {
-                const res = await fetch(`./maintenance.json?t=${new Date().getTime()}`);
-                if (res.ok) { const data = await res.json(); maintenanceList = data.nodes || []; }
-            } catch (e) { console.warn("Maint mode off."); }
-
             for(let n of allNodes) {
-                const isMaint = maintenanceList.find(m => m.id === n.id);
-                n.status = isMaint ? 'maintenance' : 'normal';
-                if (!isMaint) {
-                    try { await fetch(n.url, { mode: 'no-cors' }); } 
-                    catch { n.status = 'unavailable'; }
+                try {
+                    await fetch(n.url, { mode: 'no-cors' });
+                    n.status = 'up';
+                } catch {
+                    n.status = 'down';
                 }
             }
 
             document.getElementById('service-status-list').innerHTML = allNodes.map(n => `
                 <div class="p-4 flex justify-between items-center">
                     <span class="font-medium text-slate-700 truncate mr-4"><i class="fas fa-${n.icon} mr-2"></i> ${n.name}</span>
-                    ${n.status === 'normal' ? '<span class="text-emerald-500 font-bold text-[11px] bg-emerald-100 px-2 py-1 rounded">UP</span>' : 
-                      (n.status === 'maintenance' ? '<span class="text-amber-500 font-bold text-[11px] bg-amber-100 px-2 py-1 rounded">WARN</span>' : 
-                      '<span class="text-red-500 font-bold text-[11px] bg-red-100 px-2 py-1 rounded">DOWN</span>')}
+                    ${n.status === 'up' ? '<span class="text-emerald-500 font-bold text-[11px] bg-emerald-100 px-2 py-1 rounded">UP</span>' : 
+                      '<span class="text-red-500 font-bold text-[11px] bg-red-100 px-2 py-1 rounded">DOWN</span>'}
                 </div>
             `).join('');
 
@@ -115,7 +106,7 @@
             document.getElementById('history-body').innerHTML = allNodes.map(n => `
                 <tr><td class="p-5 font-semibold text-[13px] truncate">${n.name}</td>${last7Days.map(date => {
                     const status = historyData[date] ? historyData[date][n.id] : null;
-                    return `<td class="p-5 text-center">${status ? (status === 'down' ? '❌' : '⚠️') : '✅'}</td>`;
+                    return `<td class="p-5 text-center">${status ? (status === 'down' ? '❌' : '✅') : '✅'}</td>`;
                 }).join('')}</tr>
             `).join('');
 

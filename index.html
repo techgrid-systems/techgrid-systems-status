@@ -124,13 +124,16 @@
             { id: 'voip-portal', name: 'VoIP Portal', url: 'https://voip.techgrid-systems.org.uk', status: 'pending' },
             { id: 'apps-portal', name: 'Applications Portal', url: 'https://applications.techgrid-systems.org.uk', status: 'pending' },
             { id: 'news-portal', name: 'News Portal', url: 'https://news.techgrid-systems.org.uk', status: 'pending' },
+            { id: 'SharePoint', name: 'SharePoint Portal', url: 'https://sharepoint.techgrid-systems.org.uk/', uptime: '99.9%' },
+            { id: 'ai-portal', name: 'AI Portal', url: 'https://ai.techgrid-systems.org.uk/', uptime: '99.9%' },
+            { id: 'training-platform', name: 'Training Portal', url: 'https://power-automate-training.techgrid-systems.org.uk/', uptime: '99.8%' }
         ];
 
         const infraNodes = [
-            { id: 'core-lon', name: 'Core Node - London', host: '8.8.8.8', status: 'pending' },
-            { id: 'core-tv-server', name: 'Core Server - TechGrid Systems', host: 'SV-DC-01.techgrid-systems.org.uk', status: 'pending' },
-            { id: 'db-cluster', name: 'Primary DB Cluster', host: '1.1.1.1', status: 'pending' },
-            { id: 'auth-server', name: 'Auth Node Alpha', host: '9.9.9.9', status: 'pending' }
+            { id: 'core-lon', name: 'Core Node - London', host: 'techgrid-systems.org.uk', status: 'pending' },
+            { id: 'dc-server', name: 'Core Server - TechGrid Systems', host: 'TGS-DC-01.techgrid-systems.org.uk', status: 'pending' },
+            { id: 'ftp-server', name: 'Primary FTP Server', host: 'ftp.techgrid-systems.org.uk', status: 'pending' },
+            { id: 'dns-server', name: 'DNS Server', host: '8.8.8.8', status: 'pending' }
         ];
 
         async function pingEndpoint(host) {
